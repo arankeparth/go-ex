@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -75,9 +76,9 @@ func ReadDocuments(ctx context.Context, database string, collection string, filt
 }
 
 // UpdateDocument updates a document in the specified collection.
-func UpdateDocument(ctx context.Context, database string, collection string, filter bson.M, update bson.M) (*mongo.UpdateResult, error) {
+func UpdateDocument(ctx context.Context, database string, collection string, id primitive.ObjectID, update bson.M) (*mongo.UpdateResult, error) {
 	coll := client.Database(database).Collection(collection)
-	result, err := coll.UpdateOne(ctx, filter, bson.M{"$set": update})
+	result, err := coll.UpdateByID(ctx, id, bson.M{"$set": update})
 	if err != nil {
 		return nil, fmt.Errorf("failed to update document: %v", err)
 	}

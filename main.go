@@ -6,8 +6,11 @@ import (
 
 	"go-ex/db"
 
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func setupRouter() *gin.Engine {
@@ -44,15 +47,17 @@ func setupRouter() *gin.Engine {
 	})
 
 	r.PUT("/users/:id", func(c *gin.Context) {
-		id := c.Param("id")
+		id, _ := primitive.ObjectIDFromHex(c.Param("id"))
+
+		fmt.Println("#######################id to update: ", id)
 		var update bson.M
 		if err := c.ShouldBindJSON(&update); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-
-		filter := bson.M{"_id": id} // Replace with ObjectID conversion if required
-		result, err := db.UpdateDocument(ctx, "exampleDB", "users", filter, update)
+		fmt.Println("#######################id to update ", update)
+		//filter := bson.M{"_id": id} // Replace with ObjectID conversion if required
+		result, err := db.UpdateDocument(ctx, "exampleDB", "users", id, update)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -61,7 +66,7 @@ func setupRouter() *gin.Engine {
 	})
 
 	r.DELETE("/users/:id", func(c *gin.Context) {
-		id := c.Param("id")
+		id, _ := primitive.ObjectIDFromHex(c.Param("id"))
 		filter := bson.M{"_id": id} // Replace with ObjectID conversion if required
 
 		result, err := db.DeleteDocument(ctx, "exampleDB", "users", filter)
