@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  go-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: go-server
+    ports:
+      - "8080:8080" # Exposes the Go server on localhost:8080
+    depends_on:
+      - mongo
+    environment:
+      - MONGO_URI=mongodb://mongo:27017 # MongoDB connection URI
+
+  mongo:
+    image: mongo:6.0
+    container_name: mongo
+    ports:
+      - "27017:27017" # Exposes MongoDB on localhost:27017
+    volumes:
+      - mongo_data:/data/db # Persists MongoDB data
+
+volumes:
+  mongo_data:
