@@ -9,6 +9,7 @@ COPY go.mod go.sum ./
 
 # Download dependencies
 RUN go mod download
+RUN go mod vendor
 
 # Copy the rest of the application
 COPY . .
@@ -17,7 +18,7 @@ COPY . .
 RUN go build -o main .
 
 # Expose the port the app runs on
-EXPOSE 8080
+EXPOSE 8080 6060
 
 # Start the application
 CMD ["./main"]

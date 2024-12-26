@@ -8,6 +8,7 @@ services:
     container_name: go-server
     ports:
       - "8080:8080" # Exposes the Go server on localhost:8080
+      - "6060:6060"
     depends_on:
       - mongo
     environment:

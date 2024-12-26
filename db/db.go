@@ -3,8 +3,8 @@ package db
 import (
 	"context"
 	"fmt"
+	"go-ex/config"
 	"log"
-	"os"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -17,10 +17,13 @@ var client *mongo.Client
 
 // ConnectToDb establishes a connection to the MongoDB server.
 func ConnectToDb(ctx context.Context) (*mongo.Client, error) {
-	uri := os.Getenv("MONGO_URI")
+	config.LoadEnv()
+
+	// Step 2: Retrieve specific environment variables
+	mongoURI := config.GetEnv("MONGO_URI")
 
 	// Create a new client and connect to the server
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoURI))
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 		return nil, err
@@ -36,7 +39,7 @@ func ConnectToDb(ctx context.Context) (*mongo.Client, error) {
 		return nil, err
 	}
 
-	fmt.Println("Connected to MongoDB!")
+	log.Printf("MongoDB connected successfully!")
 	return client, nil
 }
 

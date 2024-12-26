@@ -2,86 +2,43 @@ package main
 
 import (
 	"context"
+	"log"
 	"net/http"
+	"runtime"
+
+	_ "net/http/pprof" // Import pprof for side effects
 
 	"go-ex/db"
 
-	"fmt"
+	"go-ex/config"
+	"go-ex/routers"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func setupRouter() *gin.Engine {
 	r := gin.Default()
-
-	// Initialize MongoDB
 	ctx := context.Background()
+
+	config.LoadEnv()
+
+	log.Printf("Creating Database connection.")
 	db.InitializeDatabase(ctx)
 
-	// Routes for CRUD operations
-	r.POST("/users", func(c *gin.Context) {
-		var user bson.M
-		if err := c.ShouldBindJSON(&user); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		result, err := db.CreateDocument(ctx, "exampleDB", "users", user)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{"insertedID": result.InsertedID})
-	})
-
-	r.GET("/users", func(c *gin.Context) {
-		filter := bson.M{} // Fetch all documents
-		users, err := db.ReadDocuments(ctx, "exampleDB", "users", filter)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		c.JSON(http.StatusOK, users)
-	})
-
-	r.PUT("/users/:id", func(c *gin.Context) {
-		id, _ := primitive.ObjectIDFromHex(c.Param("id"))
-
-		fmt.Println("#######################id to update: ", id)
-		var update bson.M
-		if err := c.ShouldBindJSON(&update); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		fmt.Println("#######################id to update ", update)
-		//filter := bson.M{"_id": id} // Replace with ObjectID conversion if required
-		result, err := db.UpdateDocument(ctx, "exampleDB", "users", id, update)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{"matchedCount": result.MatchedCount, "modifiedCount": result.ModifiedCount})
-	})
-
-	r.DELETE("/users/:id", func(c *gin.Context) {
-		id, _ := primitive.ObjectIDFromHex(c.Param("id"))
-		filter := bson.M{"_id": id} // Replace with ObjectID conversion if required
-
-		result, err := db.DeleteDocument(ctx, "exampleDB", "users", filter)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{"deletedCount": result.DeletedCount})
-	})
+	log.Printf("Setting up Routers")
+	routers.SetUpUserRouters(r)
 
 	return r
 }
 
 func main() {
+	go func() {
+		runtime.SetCPUProfileRate(1000000)
+		log.Println("Starting pprof server on :6060")
+		log.Println(http.ListenAndServe(":6060", nil)) // Default pprof routes served here
+	}()
 	r := setupRouter()
 	// Listen and serve on 0.0.0.0:8080
-	r.Run(":8080")
+	port := config.GetEnv("PORT")
+	r.Run(port)
 }
